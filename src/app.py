@@ -133,14 +133,14 @@ def register_blueprints(app):
     """Register application blueprints"""
     
     # Import blueprints (will be created in next steps)
-    # from src.auth.routes import auth_bp
+    from src.auth.routes import auth_bp
     # from src.courses.routes import courses_bp
     # from src.enrollments.routes import enrollments_bp
     # from src.students.routes import students_bp
     # from src.admin.routes import admin_bp
     
     # Register blueprints
-    # app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
     # app.register_blueprint(courses_bp, url_prefix='/api/courses')
     # app.register_blueprint(enrollments_bp, url_prefix='/api/enrollments')
     # app.register_blueprint(students_bp, url_prefix='/api/students')
