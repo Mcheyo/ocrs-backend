@@ -22,15 +22,20 @@ def generate_tokens(user_id, role_name):
         dict: Contains access_token and refresh_token
     """
     try:
-        # Create token identity with user info
-        identity = {
-            'user_id': user_id,
+        # Create additional claims
+        additional_claims = {
             'role': role_name
         }
         
-        # Generate tokens
-        access_token = create_access_token(identity=identity)
-        refresh_token = create_refresh_token(identity=identity)
+        # Generate tokens with user_id as identity
+        access_token = create_access_token(
+            identity=str(user_id),
+            additional_claims=additional_claims
+        )
+        refresh_token = create_refresh_token(
+            identity=str(user_id),
+            additional_claims=additional_claims
+        )
         
         return {
             'access_token': access_token,

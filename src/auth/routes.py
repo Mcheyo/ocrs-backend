@@ -1,36 +1,33 @@
 """
 OCRS Backend - Authentication Routes
-User registration, login, logout, and profile management
+API endpoints for user authentication
 """
 
 from flask import Blueprint, request
-from flask_jwt_extended import (
-    create_access_token, create_refresh_token,
-    jwt_required, get_jwt_identity, get_jwt
-)
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.auth.models import UserModel
-from src.auth.decorators import require_auth, require_role, get_current_user
+from src.auth.utils import generate_tokens, format_user_response
+from src.auth.decorators import require_auth
 from src.utils.responses import (
     success_response, error_response, created_response,
-    unauthorized_response, validation_error_response
+    validation_error_response, unauthorized_response
 )
 from src.utils.validators import (
     validate_email_address, validate_password, validate_name,
     validate_required_fields
 )
 from src.utils.logger import setup_logger
-from datetime import timedelta
 
 logger = setup_logger('ocrs.auth.routes')
 
-# Create blueprint
+# Create Blueprint
 auth_bp = Blueprint('auth', __name__)
 
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
     """
-    Register a new user account
+    Register a new user
     ---
     tags:
       - Authentication
@@ -60,8 +57,8 @@ def register():
               example: Doe
             role:
               type: string
+              example: student
               enum: [student, faculty, admin]
-              default: student
     responses:
       201:
         description: User created successfully
@@ -76,74 +73,81 @@ def register():
         # Validate required fields
         required_fields = ['email', 'password', 'first_name', 'last_name']
         is_valid, missing = validate_required_fields(data, required_fields)
+        
         if not is_valid:
             return validation_error_response({
                 'missing_fields': missing
             })
         
-        # Validate email
-        is_valid, email_or_error = validate_email_address(data['email'])
-        if not is_valid:
-            return validation_error_response({'email': email_or_error})
+        # Extract data
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '')
+        first_name = data.get('first_name', '').strip()
+        last_name = data.get('last_name', '').strip()
+        role = data.get('role', 'student').lower()
         
-        email = email_or_error
+        # Validate email
+        is_valid, result = validate_email_address(email)
+        if not is_valid:
+            return validation_error_response({'email': result})
+        email = result  # Use normalized email
         
         # Validate password
-        is_valid, error_msg = validate_password(data['password'])
+        is_valid, error_msg = validate_password(password)
         if not is_valid:
             return validation_error_response({'password': error_msg})
         
         # Validate names
-        is_valid, error_msg = validate_name(data['first_name'], 'First name')
+        is_valid, error_msg = validate_name(first_name, "First name")
         if not is_valid:
             return validation_error_response({'first_name': error_msg})
         
-        is_valid, error_msg = validate_name(data['last_name'], 'Last name')
+        is_valid, error_msg = validate_name(last_name, "Last name")
         if not is_valid:
             return validation_error_response({'last_name': error_msg})
         
-        # Get role (default: student)
-        role = data.get('role', 'student')
-        if role not in ['student', 'faculty', 'admin']:
-            return validation_error_response({'role': 'Invalid role'})
+        # Validate role
+        valid_roles = ['student', 'faculty', 'admin']
+        if role not in valid_roles:
+            return validation_error_response({
+                'role': f"Role must be one of: {', '.join(valid_roles)}"
+            })
         
-        # Only admins can create non-student accounts
-        # (You can add this check later when you have admin auth working)
+        # Check if email already exists
+        if UserModel.email_exists(email):
+            return error_response("Email already registered", 409)
         
         # Create user
         user = UserModel.create_user(
             email=email,
-            password=data['password'],
-            first_name=data['first_name'],
-            last_name=data['last_name'],
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
             role_name=role
         )
         
         if not user:
-            return error_response('Email already exists or user creation failed', 409)
+            return error_response("Failed to create user", 500)
         
-        # Remove sensitive data
-        user_data = {
-            'user_id': user['user_id'],
-            'email': user['email'],
-            'first_name': user['first_name'],
-            'last_name': user['last_name'],
-            'role': user['role_name'],
-            'created_at': user['created_at'].isoformat() if user.get('created_at') else None
-        }
+        # Format response
+        user_data = format_user_response(user)
         
-        logger.info(f"New user registered: {email}")
-        return created_response(user_data, 'User registered successfully')
+        logger.info(f"User registered: {email}")
+        
+        return created_response(
+            data=user_data,
+            message="User registered successfully"
+        )
         
     except Exception as e:
         logger.error(f"Registration error: {e}")
-        return error_response('Registration failed', 500)
+        return error_response("An error occurred during registration", 500)
 
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """
-    Login and receive JWT tokens
+    User login
     ---
     tags:
       - Authentication
@@ -166,15 +170,8 @@ def login():
     responses:
       200:
         description: Login successful
-        schema:
-          type: object
-          properties:
-            access_token:
-              type: string
-            refresh_token:
-              type: string
-            user:
-              type: object
+      400:
+        description: Validation error
       401:
         description: Invalid credentials
     """
@@ -182,110 +179,64 @@ def login():
         data = request.get_json()
         
         # Validate required fields
-        if not data or not data.get('email') or not data.get('password'):
+        required_fields = ['email', 'password']
+        is_valid, missing = validate_required_fields(data, required_fields)
+        
+        if not is_valid:
             return validation_error_response({
-                'message': 'Email and password are required'
+                'missing_fields': missing
             })
         
-        email = data['email'].lower().strip()
-        password = data['password']
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '')
         
-        # Get user by email
+        # Get user
         user = UserModel.get_user_by_email(email)
         
         if not user:
-            logger.warning(f"Login attempt for non-existent user: {email}")
-            return unauthorized_response('Invalid email or password')
+            return unauthorized_response("Invalid email or password")
+        
+        # Check if user is active
+        if not user.get('is_active'):
+            return unauthorized_response("Account is inactive")
         
         # Verify password
         if not UserModel.verify_password(password, user['password_hash']):
-            logger.warning(f"Failed login attempt for: {email}")
-            return unauthorized_response('Invalid email or password')
+            return unauthorized_response("Invalid email or password")
         
         # Update last login
         UserModel.update_last_login(user['user_id'])
         
-        # Create JWT tokens with additional claims
-        additional_claims = {
-            'role': user['role_name'],
-            'email': user['email']
-        }
+        # Generate tokens
+        tokens = generate_tokens(user['user_id'], user['role_name'])
         
-        access_token = create_access_token(
-            identity=user['user_id'],
-            additional_claims=additional_claims
-        )
+        if not tokens:
+            return error_response("Failed to generate authentication tokens", 500)
         
-        refresh_token = create_refresh_token(
-            identity=user['user_id'],
-            additional_claims=additional_claims
-        )
-        
-        # Prepare user data (without password hash)
-        user_data = {
-            'user_id': user['user_id'],
-            'email': user['email'],
-            'first_name': user['first_name'],
-            'last_name': user['last_name'],
-            'role': user['role_name']
-        }
+        # Format user data
+        user_data = format_user_response(user)
         
         logger.info(f"User logged in: {email}")
         
-        return success_response({
-            'access_token': access_token,
-            'refresh_token': refresh_token,
-            'user': user_data
-        }, 'Login successful')
+        return success_response(
+            data={
+                'user': user_data,
+                'access_token': tokens['access_token'],
+                'refresh_token': tokens['refresh_token']
+            },
+            message="Login successful"
+        )
         
     except Exception as e:
         logger.error(f"Login error: {e}")
-        return error_response('Login failed', 500)
-
-
-@auth_bp.route('/refresh', methods=['POST'])
-@jwt_required(refresh=True)
-def refresh():
-    """
-    Refresh access token using refresh token
-    ---
-    tags:
-      - Authentication
-    security:
-      - Bearer: []
-    responses:
-      200:
-        description: Token refreshed
-      401:
-        description: Invalid refresh token
-    """
-    try:
-        current_user_id = get_jwt_identity()
-        claims = get_jwt()
-        
-        # Create new access token with same claims
-        new_access_token = create_access_token(
-            identity=current_user_id,
-            additional_claims={
-                'role': claims.get('role'),
-                'email': claims.get('email')
-            }
-        )
-        
-        return success_response({
-            'access_token': new_access_token
-        }, 'Token refreshed successfully')
-        
-    except Exception as e:
-        logger.error(f"Token refresh error: {e}")
-        return error_response('Token refresh failed', 500)
+        return error_response("An error occurred during login", 500)
 
 
 @auth_bp.route('/me', methods=['GET'])
 @require_auth
-def get_current_user_profile():
+def get_current_user_info():
     """
-    Get current authenticated user's profile
+    Get current user information
     ---
     tags:
       - Authentication
@@ -293,22 +244,55 @@ def get_current_user_profile():
       - Bearer: []
     responses:
       200:
-        description: User profile
+        description: User information
       401:
-        description: Not authenticated
+        description: Unauthorized
     """
     try:
-        user_id = get_jwt_identity()
-        user = UserModel.get_user_profile(user_id)
+        identity = get_jwt_identity()
+        user_id = identity.get('user_id')
+        
+        user = UserModel.get_user_by_id(user_id)
         
         if not user:
-            return error_response('User not found', 404)
+            return error_response("User not found", 404)
         
-        return success_response(user)
+        user_data = format_user_response(user)
+        
+        return success_response(data=user_data)
         
     except Exception as e:
-        logger.error(f"Get profile error: {e}")
-        return error_response('Failed to get profile', 500)
+        logger.error(f"Error fetching user info: {e}")
+        return error_response("An error occurred", 500)
+
+
+@auth_bp.route('/logout', methods=['POST'])
+@require_auth
+def logout():
+    """
+    User logout
+    ---
+    tags:
+      - Authentication
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Logout successful
+      401:
+        description: Unauthorized
+    """
+    try:
+        identity = get_jwt_identity()
+        user_id = identity.get('user_id')
+        
+        logger.info(f"User logged out: user_id={user_id}")
+        
+        return success_response(message="Logout successful")
+        
+    except Exception as e:
+        logger.error(f"Logout error: {e}")
+        return error_response("An error occurred during logout", 500)
 
 
 @auth_bp.route('/password', methods=['PUT'])
@@ -337,69 +321,52 @@ def change_password():
               type: string
     responses:
       200:
-        description: Password changed
+        description: Password changed successfully
       400:
         description: Validation error
       401:
         description: Invalid current password
     """
     try:
+        identity = get_jwt_identity()
+        user_id = identity.get('user_id')
+        
         data = request.get_json()
-        user_id = get_jwt_identity()
         
         # Validate required fields
-        if not data or not data.get('current_password') or not data.get('new_password'):
-            return validation_error_response({
-                'message': 'Current password and new password are required'
-            })
+        required_fields = ['current_password', 'new_password']
+        is_valid, missing = validate_required_fields(data, required_fields)
+        
+        if not is_valid:
+            return validation_error_response({'missing_fields': missing})
+        
+        current_password = data.get('current_password', '')
+        new_password = data.get('new_password', '')
+        
+        # Validate new password
+        is_valid, error_msg = validate_password(new_password)
+        if not is_valid:
+            return validation_error_response({'new_password': error_msg})
         
         # Get user
         user = UserModel.get_user_by_id(user_id)
         if not user:
-            return error_response('User not found', 404)
+            return error_response("User not found", 404)
+        
+        # Get full user with password hash
+        user_with_pass = UserModel.get_user_by_email(user['email'])
         
         # Verify current password
-        user_with_hash = UserModel.get_user_by_email(user['email'])
-        if not UserModel.verify_password(data['current_password'], user_with_hash['password_hash']):
-            return unauthorized_response('Current password is incorrect')
-        
-        # Validate new password
-        is_valid, error_msg = validate_password(data['new_password'])
-        if not is_valid:
-            return validation_error_response({'new_password': error_msg})
+        if not UserModel.verify_password(current_password, user_with_pass['password_hash']):
+            return unauthorized_response("Current password is incorrect")
         
         # Update password
-        success = UserModel.update_password(user_id, data['new_password'])
-        
-        if not success:
-            return error_response('Failed to update password', 500)
-        
-        logger.info(f"Password changed for user: {user['email']}")
-        return success_response(message='Password changed successfully')
+        if UserModel.update_password(user_id, new_password):
+            logger.info(f"Password changed for user_id: {user_id}")
+            return success_response(message="Password changed successfully")
+        else:
+            return error_response("Failed to update password", 500)
         
     except Exception as e:
-        logger.error(f"Change password error: {e}")
-        return error_response('Failed to change password', 500)
-
-
-@auth_bp.route('/logout', methods=['POST'])
-@require_auth
-def logout():
-    """
-    Logout (token invalidation handled client-side)
-    ---
-    tags:
-      - Authentication
-    security:
-      - Bearer: []
-    responses:
-      200:
-        description: Logged out successfully
-    """
-    # In a JWT system, logout is typically handled client-side by deleting the token
-    # For server-side logout, you would need to implement a token blacklist
-    
-    user_id = get_jwt_identity()
-    logger.info(f"User logged out: {user_id}")
-    
-    return success_response(message='Logged out successfully')
+        logger.error(f"Password change error: {e}")
+        return error_response("An error occurred", 500)
