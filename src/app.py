@@ -36,6 +36,10 @@ def create_app(config_name=None):
         Flask: Configured Flask application
     """
     app = Flask(__name__)
+    app.url_map.strict_slashes = False
+
+    app.url_map.strict_slashes = False  # treat /ping and /ping/ as same
+
     
     # Load configuration
     config = get_config(config_name)
@@ -138,6 +142,11 @@ def register_blueprints(app):
     from src.enrollments.routes import enrollments_bp
     # from src.students.routes import students_bp
     from src.admin.routes import admin_bp
+    from src.routes.test_routes import test_bp
+
+
+
+
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -145,6 +154,13 @@ def register_blueprints(app):
     app.register_blueprint(enrollments_bp, url_prefix='/api/enrollments')
     # app.register_blueprint(students_bp, url_prefix='/api/students')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(test_bp)  # exposes GET /ping
+
+
+
+
+
+
     
     logger.info("Blueprints registered")
 
@@ -242,8 +258,8 @@ app = create_app()
 def healthz():
     return {"ok": True}, 200
 
-if __name__ == '__main__':
-    # Get configuration
+if __name__ == "__main__":
+    # Get configuration 
     config = get_config()
     # Run application
     app.run(

@@ -722,3 +722,71 @@
 {"asctime": "2025-11-08 20:41:36,970", "name": "ocrs.auth.routes", "levelname": "INFO", "message": "User logged in: admin@umgc.edu", "pathname": "/home/cheyo/ocrs-backend/src/auth/routes.py", "lineno": 219, "taskName": null}
 {"asctime": "2025-11-08 20:41:47,755", "name": "ocrs.admin.models", "levelname": "INFO", "message": "Course created: 33", "pathname": "/home/cheyo/ocrs-backend/src/admin/models.py", "lineno": 134, "taskName": null}
 {"asctime": "2025-11-08 20:41:47,755", "name": "ocrs.admin.models", "levelname": "INFO", "message": "Course created: 33", "pathname": "/home/cheyo/ocrs-backend/src/admin/models.py", "lineno": 134, "taskName": null}
+{"asctime": "2025-11-12 06:52:18,416", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 06:52:18,416", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 06:52:18,416", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 06:52:18,416", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 06:52:18,417", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 06:52:18,417", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 06:55:21,142", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 06:55:21,142", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 06:55:21,143", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 06:55:21,143", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 06:55:21,144", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 06:55:21,144", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 06:55:21,253", "name": "ocrs.app", "levelname": "INFO", "message": "Blueprints registered", "pathname": "/app/src/app.py", "lineno": 149}
+{"asctime": "2025-11-12 06:55:21,253", "name": "ocrs.app", "levelname": "INFO", "message": "Blueprints registered", "pathname": "/app/src/app.py", "lineno": 149}
+{"asctime": "2025-11-12 06:55:21,254", "name": "ocrs.app", "levelname": "INFO", "message": "Error handlers registered", "pathname": "/app/src/app.py", "lineno": 193}
+{"asctime": "2025-11-12 06:55:21,254", "name": "ocrs.app", "levelname": "INFO", "message": "Error handlers registered", "pathname": "/app/src/app.py", "lineno": 193}
+{"asctime": "2025-11-12 06:55:21,255", "name": "ocrs.app", "levelname": "INFO", "message": "Health check endpoints registered", "pathname": "/app/src/app.py", "lineno": 233}
+{"asctime": "2025-11-12 06:55:21,255", "name": "ocrs.app", "levelname": "INFO", "message": "Health check endpoints registered", "pathname": "/app/src/app.py", "lineno": 233}
+{"asctime": "2025-11-12 06:55:21,256", "name": "ocrs.app", "levelname": "INFO", "message": "Application started in development mode", "pathname": "/app/src/app.py", "lineno": 56}
+{"asctime": "2025-11-12 06:55:21,256", "name": "ocrs.app", "levelname": "INFO", "message": "Application started in development mode", "pathname": "/app/src/app.py", "lineno": 56}
+{"asctime": "2025-11-12 06:55:21,375", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 06:55:21,375", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 06:55:21,375", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 06:55:21,375", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 06:55:21,376", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 06:55:21,376", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 06:55:21,470", "name": "ocrs.app", "levelname": "INFO", "message": "Blueprints registered", "pathname": "/app/src/app.py", "lineno": 149}
+{"asctime": "2025-11-12 06:55:21,470", "name": "ocrs.app", "levelname": "INFO", "message": "Blueprints registered", "pathname": "/app/src/app.py", "lineno": 149}
+{"asctime": "2025-11-12 06:55:21,470", "name": "ocrs.app", "levelname": "INFO", "message": "Error handlers registered", "pathname": "/app/src/app.py", "lineno": 193}
+{"asctime": "2025-11-12 06:55:21,470", "name": "ocrs.app", "levelname": "INFO", "message": "Error handlers registered", "pathname": "/app/src/app.py", "lineno": 193}
+{"asctime": "2025-11-12 06:55:21,471", "name": "ocrs.app", "levelname": "INFO", "message": "Health check endpoints registered", "pathname": "/app/src/app.py", "lineno": 233}
+{"asctime": "2025-11-12 06:55:21,471", "name": "ocrs.app", "levelname": "INFO", "message": "Health check endpoints registered", "pathname": "/app/src/app.py", "lineno": 233}
+{"asctime": "2025-11-12 06:55:21,471", "name": "ocrs.app", "levelname": "INFO", "message": "Application started in development mode", "pathname": "/app/src/app.py", "lineno": 56}
+{"asctime": "2025-11-12 06:55:21,471", "name": "ocrs.app", "levelname": "INFO", "message": "Application started in development mode", "pathname": "/app/src/app.py", "lineno": 56}
+{"asctime": "2025-11-12 07:09:54,577", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 07:09:54,577", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 07:09:54,578", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 07:09:54,578", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 07:09:54,579", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 07:09:54,579", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 07:18:41,236", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 07:18:41,236", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 07:18:41,237", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 07:18:41,237", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 07:18:41,238", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 07:18:41,238", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 07:18:41,335", "name": "ocrs.app", "levelname": "INFO", "message": "Blueprints registered", "pathname": "/app/src/app.py", "lineno": 149}
+{"asctime": "2025-11-12 07:18:41,335", "name": "ocrs.app", "levelname": "INFO", "message": "Blueprints registered", "pathname": "/app/src/app.py", "lineno": 149}
+{"asctime": "2025-11-12 07:18:41,335", "name": "ocrs.app", "levelname": "INFO", "message": "Error handlers registered", "pathname": "/app/src/app.py", "lineno": 193}
+{"asctime": "2025-11-12 07:18:41,335", "name": "ocrs.app", "levelname": "INFO", "message": "Error handlers registered", "pathname": "/app/src/app.py", "lineno": 193}
+{"asctime": "2025-11-12 07:18:41,336", "name": "ocrs.app", "levelname": "INFO", "message": "Health check endpoints registered", "pathname": "/app/src/app.py", "lineno": 233}
+{"asctime": "2025-11-12 07:18:41,336", "name": "ocrs.app", "levelname": "INFO", "message": "Health check endpoints registered", "pathname": "/app/src/app.py", "lineno": 233}
+{"asctime": "2025-11-12 07:18:41,336", "name": "ocrs.app", "levelname": "INFO", "message": "Application started in development mode", "pathname": "/app/src/app.py", "lineno": 56}
+{"asctime": "2025-11-12 07:18:41,336", "name": "ocrs.app", "levelname": "INFO", "message": "Application started in development mode", "pathname": "/app/src/app.py", "lineno": 56}
+{"asctime": "2025-11-12 07:18:41,439", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 07:18:41,439", "name": "ocrs.app", "levelname": "INFO", "message": "CORS initialized", "pathname": "/app/src/app.py", "lineno": 66}
+{"asctime": "2025-11-12 07:18:41,439", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 07:18:41,439", "name": "ocrs.app", "levelname": "INFO", "message": "JWT Manager initialized", "pathname": "/app/src/app.py", "lineno": 84}
+{"asctime": "2025-11-12 07:18:41,440", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 07:18:41,440", "name": "ocrs.app", "levelname": "INFO", "message": "Swagger documentation initialized at /api/docs", "pathname": "/app/src/app.py", "lineno": 129}
+{"asctime": "2025-11-12 07:18:41,524", "name": "ocrs.app", "levelname": "INFO", "message": "Blueprints registered", "pathname": "/app/src/app.py", "lineno": 149}
+{"asctime": "2025-11-12 07:18:41,524", "name": "ocrs.app", "levelname": "INFO", "message": "Blueprints registered", "pathname": "/app/src/app.py", "lineno": 149}
+{"asctime": "2025-11-12 07:18:41,525", "name": "ocrs.app", "levelname": "INFO", "message": "Error handlers registered", "pathname": "/app/src/app.py", "lineno": 193}
+{"asctime": "2025-11-12 07:18:41,525", "name": "ocrs.app", "levelname": "INFO", "message": "Error handlers registered", "pathname": "/app/src/app.py", "lineno": 193}
+{"asctime": "2025-11-12 07:18:41,525", "name": "ocrs.app", "levelname": "INFO", "message": "Health check endpoints registered", "pathname": "/app/src/app.py", "lineno": 233}
+{"asctime": "2025-11-12 07:18:41,525", "name": "ocrs.app", "levelname": "INFO", "message": "Health check endpoints registered", "pathname": "/app/src/app.py", "lineno": 233}
+{"asctime": "2025-11-12 07:18:41,526", "name": "ocrs.app", "levelname": "INFO", "message": "Application started in development mode", "pathname": "/app/src/app.py", "lineno": 56}
+{"asctime": "2025-11-12 07:18:41,526", "name": "ocrs.app", "levelname": "INFO", "message": "Application started in development mode", "pathname": "/app/src/app.py", "lineno": 56}
