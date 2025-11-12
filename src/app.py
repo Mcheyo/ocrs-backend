@@ -234,13 +234,17 @@ def register_health_check(app):
 
 
 # Create application instance
+from config.config import get_config
+
 app = create_app()
 
+@app.get("/healthz")
+def healthz():
+    return {"ok": True}, 200
 
 if __name__ == '__main__':
     # Get configuration
     config = get_config()
-    
     # Run application
     app.run(
         host=config.HOST,
