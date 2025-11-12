@@ -236,14 +236,13 @@ def register_health_check(app):
 # Create application instance
 app = create_app()
 
-
 if __name__ == '__main__':
     # Get configuration
     config = get_config()
-    
+
     # Run application
     app.run(
-        host=config.HOST,
-        port=config.PORT,
-        debug=config.DEBUG
+        host='0.0.0.0',
+        port=5001,  # Changed from config.PORT to 5001
+        debug=True
     )
