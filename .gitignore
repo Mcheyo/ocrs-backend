@@ -1,0 +1,19 @@
+# Python environment
+venv/
+.env
+.env.local
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Logs
+logs/
+*.log
+
+# Ruff / lint / test caches
+.ruff_cache/
+.pytest_cache/
+
+# OS files
+.DS_Store
