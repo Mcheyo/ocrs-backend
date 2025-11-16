@@ -12,5 +12,5 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 5000
 
-# 👇 change this if your main file is different
+# change this if your main file is different
 CMD ["python", "src/app.py"]
