@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mysql:8
+    container_name: ocrs_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ocrs_db
+      MYSQL_USER: ocrs_user
+      MYSQL_PASSWORD: SecureOCRSPassword123!
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+
+  backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: ocrs_backend
+    env_file:
+      - ../.env
+    environment:
+      DB_HOST: db
+    ports:
+      - "5002:5000"
+    depends_on:
+      db:
+        condition: service_healthy     # ← wait for DB to be healthy
+    volumes:
+      - ../:/app
+
+volumes:
+  db_data:
