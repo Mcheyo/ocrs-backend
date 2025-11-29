@@ -249,8 +249,7 @@ def get_current_user_info():
         description: Unauthorized
     """
     try:
-        identity = get_jwt_identity()
-        user_id = identity.get('user_id')
+        user_id = int(get_jwt_identity())
         
         user = UserModel.get_user_by_id(user_id)
         
