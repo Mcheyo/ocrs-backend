@@ -138,6 +138,8 @@ def register_blueprints(app):
     from src.enrollments.routes import enrollments_bp
     # from src.students.routes import students_bp
     from src.admin.routes import admin_bp
+    from src.faculty.routes import faculty_bp
+
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -145,6 +147,7 @@ def register_blueprints(app):
     app.register_blueprint(enrollments_bp, url_prefix='/api/enrollments')
     # app.register_blueprint(students_bp, url_prefix='/api/students')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(faculty_bp, url_prefix='/api/faculty')
     
     logger.info("Blueprints registered")
 
