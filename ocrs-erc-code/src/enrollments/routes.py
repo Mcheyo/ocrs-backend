@@ -1,0 +1,542 @@
+"""
+OCRS Backend - Enrollment Routes
+API endpoints for enrollment management
+"""
+
+from flask import Blueprint, request
+from flask_jwt_extended import get_jwt_identity
+from src.enrollments.models import EnrollmentModel, WaitlistModel
+from src.enrollments.utils import format_enrollment_response, validate_enrollment
+from src.courses.models import CourseModel
+from src.auth.decorators import require_auth, require_role
+from src.utils.responses import (
+    success_response, error_response, created_response,
+    not_found_response, forbidden_response
+)
+from src.utils.logger import setup_logger
+
+logger = setup_logger('ocrs.enrollments.routes')
+
+# Create Blueprint
+enrollments_bp = Blueprint('enrollments', __name__)
+
+
+def get_student_id_from_user(user_id):
+    """Get student profile ID from user ID"""
+    from src.utils.database import execute_query
+    
+    result = execute_query(
+        "SELECT student_id FROM student_profile WHERE user_id = %s",
+        (user_id,),
+        fetch_one=True
+    )
+    return result['student_id'] if result else None
+
+
+@enrollments_bp.route('/enroll', methods=['POST'])
+@require_auth
+@require_role('student', 'admin')
+def enroll_in_section():
+    """
+    Enroll in a section
+    ---
+    tags:
+      - Enrollments
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - section_id
+          properties:
+            section_id:
+              type: integer
+              example: 1
+    responses:
+      201:
+        description: Enrollment successful
+      400:
+        description: Validation error
+      403:
+        description: Prerequisites not met or section full
+      409:
+        description: Already enrolled or schedule conflict
+    """
+    try:
+        user_id = int(get_jwt_identity())
+        
+        # Get student profile
+        student_id = get_student_id_from_user(user_id)
+        if not student_id:
+            return error_response("Student profile not found", 404)
+        
+        data = request.get_json()
+        section_id = data.get('section_id')
+        
+        if not section_id:
+            return error_response("section_id is required", 400)
+        
+        # Get section details to find course and term
+        from src.utils.database import execute_query
+        section = execute_query(
+            """SELECT s.section_id, s.course_id, s.term_id, s.status, s.capacity,
+               COALESCE(COUNT(e.enrollment_id), 0) as enrolled_count
+               FROM section s
+               LEFT JOIN enrollment e ON s.section_id = e.section_id 
+                   AND e.enrollment_status = 'Enrolled'
+               WHERE s.section_id = %s
+               GROUP BY s.section_id, s.course_id, s.term_id, s.status, s.capacity""",
+            (section_id,),
+            fetch_one=True
+        )
+        
+        if not section:
+            return not_found_response("Section not found")
+        
+        # Validate enrollment
+        is_valid, error = validate_enrollment(
+            student_id, 
+            section_id, 
+            section['course_id'],
+            section['term_id']
+        )
+        
+        if not is_valid:
+            return error_response(
+                error.get('error'),
+                400,
+                error
+            )
+        
+        # Attempt enrollment
+        result = EnrollmentModel.enroll_student(student_id, section_id)
+        
+        if 'error' in result:
+            code = result.get('code')
+            
+            # If section is full, offer waitlist
+            if code == 'SECTION_FULL':
+                return error_response(
+                    result['error'],
+                    403,
+                    {
+                        'code': code,
+                        'can_waitlist': True,
+                        'message': 'Section is full. You can join the waitlist.'
+                    }
+                )
+            
+            return error_response(result['error'], 400, {'code': code})
+        
+        # Format response
+        enrollment = format_enrollment_response(result)
+        
+        logger.info(f"Student {student_id} enrolled in section {section_id}")
+        
+        return created_response(
+            data=enrollment,
+            message="Successfully enrolled in section"
+        )
+        
+    except Exception as e:
+        logger.error(f"Enrollment error: {e}")
+        return error_response("An error occurred during enrollment", 500)
+
+
+@enrollments_bp.route('/drop/<int:section_id>', methods=['DELETE'])
+@require_auth
+@require_role('student', 'admin')
+def drop_section(section_id):
+    """
+    Drop a section
+    ---
+    tags:
+      - Enrollments
+    security:
+      - Bearer: []
+    parameters:
+      - name: section_id
+        in: path
+        type: integer
+        required: true
+        description: Section ID
+    responses:
+      200:
+        description: Section dropped successfully
+      404:
+        description: Enrollment not found
+    """
+    try:
+        user_id = int(get_jwt_identity())
+        
+        # Get student profile
+        student_id = get_student_id_from_user(user_id)
+        if not student_id:
+            return error_response("Student profile not found", 404)
+        
+        # Drop enrollment
+        success = EnrollmentModel.drop_enrollment(student_id, section_id)
+        
+        if not success:
+            return not_found_response("Enrollment not found or already dropped")
+        
+        logger.info(f"Student {student_id} dropped section {section_id}")
+        
+        return success_response(message="Section dropped successfully")
+        
+    except Exception as e:
+        logger.error(f"Drop error: {e}")
+        return error_response("An error occurred while dropping section", 500)
+
+
+@enrollments_bp.route('/my-enrollments', methods=['GET'])
+@require_auth
+@require_role('student', 'admin')
+def get_my_enrollments():
+    """
+    Get current user's enrollments
+    ---
+    tags:
+      - Enrollments
+    security:
+      - Bearer: []
+    parameters:
+      - name: term_id
+        in: query
+        type: integer
+        description: Filter by term
+      - name: status
+        in: query
+        type: string
+        description: Filter by status
+        enum: [Enrolled, Dropped, Completed]
+    responses:
+      200:
+        description: List of enrollments
+    """
+    try:
+        user_id = int(get_jwt_identity())
+        
+        # Get student profile
+        student_id = get_student_id_from_user(user_id)
+        if not student_id:
+            return error_response("Student profile not found", 404)
+        
+        term_id = request.args.get('term_id', type=int)
+        status_filter = request.args.get('status')
+        
+        # Get enrollments
+        enrollments = EnrollmentModel.get_student_enrollments(student_id, term_id=term_id)
+        
+        # Filter by status if provided
+        if status_filter:
+            enrollments = [e for e in enrollments if e.get('enrollment_status') == status_filter]
+        
+        # Format response
+        formatted_enrollments = [format_enrollment_response(e) for e in enrollments]
+        
+        # Calculate total credits for enrolled courses
+        total_credits = sum(
+            e['course']['credits'] 
+            for e in formatted_enrollments 
+            if e['status'] == 'Enrolled'
+        )
+        
+        return success_response(
+            data={
+                'enrollments': formatted_enrollments,
+                'total_credits': total_credits,
+                'enrollment_count': len([e for e in formatted_enrollments if e['status'] == 'Enrolled'])
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error fetching enrollments: {e}")
+        return error_response("An error occurred", 500)
+
+
+@enrollments_bp.route('/my-schedule', methods=['GET'])
+@require_auth
+@require_role('student', 'admin')
+def get_my_schedule():
+    """
+    Get current user's class schedule
+    ---
+    tags:
+      - Enrollments
+    security:
+      - Bearer: []
+    parameters:
+      - name: term_id
+        in: query
+        type: integer
+        description: Filter by term (defaults to current term)
+    responses:
+      200:
+        description: Class schedule with times
+    """
+    try:
+        user_id = int(get_jwt_identity())
+        
+        # Get student profile
+        student_id = get_student_id_from_user(user_id)
+        if not student_id:
+            return error_response("Student profile not found", 404)
+        
+        term_id = request.args.get('term_id', type=int)
+        
+        # Get enrollments with schedule details
+        from src.utils.database import execute_query
+        
+        query = """
+            SELECT 
+                e.enrollment_id,
+                c.course_id,
+                CONCAT(d.code, ' ', c.course_number) as course_code,
+                c.title as course_title,
+                c.credits,
+                s.section_number,
+                s.location,
+                ss.day_of_week,
+                ss.start_time,
+                ss.end_time,
+                CONCAT(u.first_name, ' ', u.last_name) as instructor_name,
+                t.name as term_name,
+                t.year as term_year
+            FROM enrollment e
+            JOIN section s ON e.section_id = s.section_id
+            JOIN course c ON s.course_id = c.course_id
+            JOIN department d ON c.dept_id = d.dept_id
+            JOIN term t ON s.term_id = t.term_id
+            LEFT JOIN section_schedule ss ON s.section_id = ss.section_id
+            LEFT JOIN user_account u ON s.instructor_id = u.user_id
+            WHERE e.student_id = %s
+            AND e.enrollment_status = 'Enrolled'
+        """
+        
+        params = [student_id]
+        
+        if term_id:
+            query += " AND s.term_id = %s"
+            params.append(term_id)
+        else:
+            query += " AND t.is_current = 1"
+        
+        query += " ORDER BY ss.day_of_week, ss.start_time"
+        
+        schedule = execute_query(query, tuple(params))
+        
+        # Group by day
+        schedule_by_day = {}
+        for item in schedule:
+            day = item.get('day_of_week', 'TBA')
+            if day not in schedule_by_day:
+                schedule_by_day[day] = []
+            
+            schedule_by_day[day].append({
+                'course_code': item.get('course_code'),
+                'course_title': item.get('course_title'),
+                'section': item.get('section_number'),
+                'location': item.get('location'),
+                'time': f"{item.get('start_time')} - {item.get('end_time')}" if item.get('start_time') else 'TBA',
+                'instructor': item.get('instructor_name'),
+                'credits': float(item.get('credits', 0))
+            })
+        
+        return success_response(
+            data={
+                'schedule': schedule_by_day,
+                'term': {
+                    'name': schedule[0].get('term_name') if schedule else None,
+                    'year': schedule[0].get('term_year') if schedule else None
+                } if schedule else None
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error fetching schedule: {e}")
+        return error_response("An error occurred", 500)
+
+
+@enrollments_bp.route('/waitlist', methods=['POST'])
+@require_auth
+@require_role('student', 'admin')
+def join_waitlist():
+    """
+    Join section waitlist
+    ---
+    tags:
+      - Enrollments
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - section_id
+          properties:
+            section_id:
+              type: integer
+              example: 11
+    responses:
+      201:
+        description: Added to waitlist
+      400:
+        description: Already on waitlist
+    """
+    try:
+        user_id = int(get_jwt_identity())
+        
+        # Get student profile
+        student_id = get_student_id_from_user(user_id)
+        if not student_id:
+            return error_response("Student profile not found", 404)
+        
+        data = request.get_json()
+        section_id = data.get('section_id')
+        
+        if not section_id:
+            return error_response("section_id is required", 400)
+        
+        # Add to waitlist
+        result = WaitlistModel.add_to_waitlist(student_id, section_id)
+        
+        if 'error' in result:
+            return error_response(result['error'], 400, {'code': result.get('code')})
+        
+        logger.info(f"Student {student_id} joined waitlist for section {section_id}")
+        
+        return created_response(
+            data=result,
+            message=f"Added to waitlist at position {result['position']}"
+        )
+        
+    except Exception as e:
+        logger.error(f"Waitlist error: {e}")
+        return error_response("An error occurred", 500)
+
+
+@enrollments_bp.route('/my-waitlists', methods=['GET'])
+@require_auth
+@require_role('student', 'admin')
+def get_my_waitlists():
+    """
+    Get current user's waitlist entries
+    ---
+    tags:
+      - Enrollments
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of waitlist entries
+    """
+    try:
+        user_id = int(get_jwt_identity())
+        
+        # Get student profile
+        student_id = get_student_id_from_user(user_id)
+        if not student_id:
+            return error_response("Student profile not found", 404)
+        
+        # Get waitlists
+        waitlists = WaitlistModel.get_student_waitlists(student_id)
+        
+        return success_response(
+            data={
+                'waitlists': waitlists,
+                'count': len(waitlists)
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error fetching waitlists: {e}")
+        return error_response("An error occurred", 500)
+
+
+@enrollments_bp.route('/validate', methods=['POST'])
+@require_auth
+@require_role('student', 'admin')
+def validate_enrollment_request():
+    """
+    Validate if student can enroll in a section
+    ---
+    tags:
+      - Enrollments
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - section_id
+          properties:
+            section_id:
+              type: integer
+              example: 1
+    responses:
+      200:
+        description: Validation result
+    """
+    try:
+        user_id = int(get_jwt_identity())
+        
+        # Get student profile
+        student_id = get_student_id_from_user(user_id)
+        if not student_id:
+            return error_response("Student profile not found", 404)
+        
+        data = request.get_json()
+        section_id = data.get('section_id')
+        
+        if not section_id:
+            return error_response("section_id is required", 400)
+        
+        # Get section details
+        from src.utils.database import execute_query
+        section = execute_query(
+            "SELECT course_id, term_id FROM section WHERE section_id = %s",
+            (section_id,),
+            fetch_one=True
+        )
+        
+        if not section:
+            return not_found_response("Section not found")
+        
+        # Validate
+        is_valid, error = validate_enrollment(
+            student_id,
+            section_id,
+            section['course_id'],
+            section['term_id']
+        )
+        
+        if is_valid:
+            return success_response(
+                data={
+                    'can_enroll': True,
+                    'message': 'Eligible to enroll'
+                }
+            )
+        else:
+            return success_response(
+                data={
+                    'can_enroll': False,
+                    'reason': error.get('error'),
+                    'details': error
+                }
+            )
+        
+    except Exception as e:
+        logger.error(f"Validation error: {e}")
+        return error_response("An error occurred", 500)

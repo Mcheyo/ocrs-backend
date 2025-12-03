@@ -88,6 +88,7 @@ class DevelopmentConfig(Config):
     """Development environment configuration"""
     DEBUG = True
     TESTING = False
+    
     CORS_ORIGINS = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
