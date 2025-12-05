@@ -4,11 +4,14 @@
     <meta charset="UTF-8" />
     <title>Online Course Registration System</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Tailwind CDN just for styling the React UI -->
+    <!-- Tailwind CDN for utility classes in the React app -->
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="bg-gray-50">
     <div id="root"></div>
+
+    <!-- Only load the React entry point.
+         No extra module scripts, no sendChatMessage import. -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
